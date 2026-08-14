@@ -67,48 +67,56 @@ Data processing runs through a Jupyter Notebook ([Create_2D_Image.ipynb](Create_
 
 ### Step 3: Building the 3D Scene in Blender
 
-Once `heatmap_heightmap_americas.png` has been generated, follow these steps in Blender to build the 3D terrain:
+Once `heatmap_heightmap_americas.png` has been generated, follow these steps in Blender to build the 3D terrain. Tested on Blender for macOS using the **EEVEE** render engine.
 
 #### 1. Create a proportional plane
 
-* Open Blender and delete the default scene (`X` > *Delete*).
+* Open Blender and clear the scene (`A` to select all, then `X` > *Delete*).
 * Add a plane (`Shift + A` > **Mesh** > **Plane**).
-* Adjust its dimensions in the side panel (`N`) to preserve the geographic aspect ratio of the Americas region ($140^\circ$ lon $\times$ $135^\circ$ lat):
-  * **Width ($X$):** `14.0 m`
-  * **Height ($Y$):** `13.5 m`
+* Press `N` to open the side panel (**Item**) and set its dimensions to preserve the geographic aspect ratio of the Americas region ($140^\circ$ lon $\times$ $135^\circ$ lat):
+  * **X:** `14 m`
+  * **Y:** `13.5 m`
+  * **Z:** `0 m`
+* **Apply Scale** (important, especially on macOS): `Cmd + A` > **Scale**. This locks in the transform before subdividing/displacing, avoiding uneven displacement later on.
 
 #### 2. Subdivide the geometry
 
-* Press `Tab` to enter **Edit Mode**, right-click the plane, select **Subdivide**, and set the number of cuts to `100`.
-* Return to **Object Mode** (`Tab`) and add a **Subdivision Surface** modifier (`Add Modifier` > **Generate** > **Subdivision Surface**).
-* Set it to **Simple** mode with `Viewport = 3` and `Render = 4`.
+* Press `Tab` to enter **Edit Mode**, right-click the plane, select **Subdivide**, and set **Number of Cuts** to `100` in the bottom-left panel.
+* Return to **Object Mode** (`Tab`).
 
-#### 3. Apply 3D displacement
+#### 3. Apply the Displace modifier
 
-* With the plane selected, add a **Displace** modifier (`Add Modifier` > **Deform** > **Displace**).
-* Create a new texture and, in the **Texture Properties** tab, load the `heatmap_heightmap_americas.png` image.
-* Configure the modifier parameters:
+* Open the **Modifier Properties** tab (blue wrench icon).
+* `Add Modifier` > **Deform** > **Displace**.
+* Configure the modifier:
   * **Coordinates:** `UV`
+  * **UV Map:** `UVMap`
   * **Direction:** `Z`
-  * **Midlevel:** `0.000`
-  * **Strength:** between `1.0` and `2.5`, depending on the desired peak height.
+  * **Midlevel:** `0.000` (keeps the base flat at the minimum value)
+  * **Strength:** `1.5` (adjust to taste for peak height)
+* Click **New** inside the modifier's texture slot to create an empty texture.
 
-#### 4. Materials & neon shading
+#### 4. Load and configure the texture
 
-* Go to the **Shading** tab and open the **Shader Editor**.
-* Connect the plane's height coordinate ($Z$) to a **ColorRamp** node:
-  * `Texture Coordinate` (Generated) $\rightarrow$ `Separate XYZ` (Z axis) $\rightarrow$ `ColorRamp` (Fac).
-* Set the neon color palette on the **ColorRamp**:
-  * **0.0 (base/sea):** transparent dark blue or black (`#04070f`).
-  * **0.2 (travel routes):** neon cyan (`#00f0ff`).
-  * **0.6 (frequent visits):** magenta (`#ff007f`).
-  * **1.0 (peaks/residence):** bright warm white (`#ffffff`).
-* Connect the **ColorRamp** output to `Base Color` and `Emission Color` on the **Principled BSDF** node.
-* Raise `Emission Strength` to `5.0`–`10.0`.
+* Open the **Texture Properties** tab (red checkered grid icon).
+* Under **Type**, select **Image or Movie**, then **Open** and load `heatmap_heightmap_americas.png`.
+* Expand **Mapping** / **Image Mapping** and change **Extension** from `Repeat` to `Clip` (or `Extend`) to prevent the texture from tiling/duplicating at the plane's edges.
 
-#### 5. Lighting & post-processing (bloom)
+#### 5. Materials & neon shading
 
-* In **World Properties**, set the world background to pure black (`#000000`).
+* In **World Properties** (red planet icon), lower **Color** all the way down to pure black (`#000000`) for the background.
+* Select the plane and create a new material in **Material Properties** (e.g. name it `Heatmap_Neon`).
+* Switch to the **Shading** tab and add the following nodes (`Shift + A`), connecting them in the node editor:
+  * **Image Texture** (load `heatmap_heightmap_americas.png` again) $\rightarrow$ **ColorRamp** `Fac` input.
+  * **ColorRamp** (Color category):
+    * Left stop (base): black / dark blue (`#04070f`).
+    * Right stop (peaks): neon cyan (`#00f0ff`) or magenta (`#ff007f`).
+  * **ColorRamp** `Color` output $\rightarrow$ **Principled BSDF** `Base Color`.
+  * Expand the **Emission** section on the **Principled BSDF** and connect the same **ColorRamp** `Color` output to `Emission Color`.
+  * Set `Emission Strength` to `3.0`–`5.0`.
+
+#### 6. Lighting & post-processing (bloom)
+
 * Add a dim, angled area light to bring out the shadows of the 3D relief.
 * Go to the **Compositing** tab, enable **Use Nodes**, and add a **Glare** node (*Type: Fog Glow*) between `Render Layers` and `Composite`.
 * Position the camera at an isometric or low-angle perspective, adjust focus with **Depth of Field**, and press `F12` to render.
