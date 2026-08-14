@@ -53,7 +53,7 @@ Data processing runs through a Jupyter Notebook ([Create_2D_Image.ipynb](Create_
 
 3. **Heightmap generation for Blender**
    * Uses `scipy.stats.gaussian_kde` to compute a smooth density matrix, free of contour-level artifacts.
-   * The matrix is normalized strictly between `0.0` (pure black = $Z=0$) and `1.0` (pure white = maximum elevation).
+   * Visit density is heavily skewed toward home/frequent locations, so the matrix goes through two power-law (gamma) compression passes — `DENSITY_GAMMA` then `SECONDARY_GAMMA`, both tunable in the notebook — before normalizing. This keeps less-visited cities from being flattened to near-invisible by the home peak, while still guaranteeing areas with no visits land at exactly `0.0` (pure black = $Z=0$); only visited areas get pulled toward `1.0` (maximum elevation).
    * Exported as a high-resolution image: `heatmap_heightmap_americas.png`.
 
 4. **Geospatial validation**
